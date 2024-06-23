@@ -9,7 +9,7 @@ save_dir = 'J:\My Drive\Roni\'
 
 save_frame = [save_dir,exp,'movies\'];
 movie = 15
-frame = 215
+frame = 210
 
 mov_name = sprintf('mov%d',movie)
 file_name = sprintf('hull3d_mov%d',movie)
@@ -22,7 +22,7 @@ mkdir(save_frame)
 
 %%
 
-% frame = 210
+frame = 210
 body = hull3d.body.body4plot{frame};
 wing_left = hull3d.leftwing.hull.hull3d{frame};
 wing_right = hull3d.rightwing.hull.hull3d{frame};
