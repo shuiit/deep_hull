@@ -6,6 +6,7 @@ path = 'H:\My Drive\dark 2022\2022_01_31\hull\hull_Reorder\'
 save_dir = 'H:\My Drive\Roni\'
 save_camera_matrices = [save_dir,exp,'camera'];
 easyWand_name = '1+2_31_01_2022_skip5_easyWandData'
+load([path,easyWand_name])
 mkdir([save_dir,exp])
 mkdir(save_camera_matrices)
 
@@ -19,7 +20,7 @@ for i = 1:1:4
     camera_name = sprintf('/camera%d_KRT',i)
     K = [focal_length(i), 0, principal_point(1,i);0, focal_length(i), principal_point(2,i);0, 0, 1];
     R = rotation_matrices(:,:,i);
-    T = rotation_matrices(:,:,i);
+    T = translation_vectors(:,:,i);
     writematrix([K;R;T],[save_camera_matrices,camera_name])
     
 end
