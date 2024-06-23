@@ -3,18 +3,22 @@ close all
 clc
 
 
+exp = '\2022_01_31\'
 path = 'H:\My Drive\dark 2022\2022_01_31\hull\hull_Reorder\'
 save_dir = 'H:\My Drive\Roni\'
+
+save_frame = [save_dir,exp,'movies\'];
 movie = 15
+
+
 mov_name = sprintf('mov%d',movie)
 file_name = sprintf('hull3d_mov%d',movie)
 struct_file_name = sprintf('Shull_mov%d',movie)
 save_file = sprintf('hull_data_mov%d.csv',movie)
 path_to_use = [path,mov_name,'/hull_op/']
-path_to_save = [save_dir,'/csv_mov/']
 load([path_to_use,file_name])
 load([path_to_use,struct_file_name])
-mkdir(path_to_save)
+mkdir(save_frame)
 
 %%
 
@@ -61,17 +65,15 @@ real_coords_table = array2table([cell2mat(real_coords')',xyz])
 real_coords_table.Properties.VariableNames = {'real_coords','x','y','z'}
 save_file = sprintf('real_coords_mov%d.csv',movie)
 
-writetable(real_coords_table,[path_to_save,save_file])
+writetable(real_coords_table,[save_frame,save_file])
 
 
 rot_mat_table = array2table(rot_mat)
 rot_mat_table.Properties.VariableNames = {'x','y','z'}
-writetable(rot_mat_table,[path_to_save,'\rot_mat.csv'])
+writetable(rot_mat_table,[save_frame,'\rot_mat.csv'])
 pcshow(wing_right);hold on;pcshow(wing_left)
 
-normals = array2table([Shull.rightwing.vectors.nrml(frame,:);Shull.leftwing.vectors.nrml(frame,:)])
-normals.Properties.VariableNames = {'x','y','z'}
-writetable(normals,[path_to_save,'\wing_normals.csv'])
+
 
 
 %%
