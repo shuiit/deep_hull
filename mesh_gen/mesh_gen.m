@@ -3,8 +3,8 @@ close all
 clc
 
 
-path = 'J:\My Drive\dark 2022\2022_01_31\hull\hull_Reorder\'
-save_dir = 'J:\My Drive\Roni\'
+path = 'H:\My Drive\dark 2022\2022_01_31\hull\hull_Reorder\'
+save_dir = 'H:\My Drive\Roni\'
 movie = 15
 mov_name = sprintf('mov%d',movie)
 file_name = sprintf('hull3d_mov%d',movie)
@@ -22,6 +22,9 @@ frame = 210
 body = hull3d.body.body4plot{frame};
 wing_left = hull3d.leftwing.hull.hull3d{frame};
 wing_right = hull3d.rightwing.hull.hull3d{frame};
+
+wing_left_bound = [hull3d.leftwing.hull.LE{frame};hull3d.leftwing.hull.TE{frame}];
+wing_right_bound = [hull3d.rightwing.hull.LE{frame};hull3d.rightwing.hull.TE{frame}];
 rot_mat = Shull.rotmat_EWtoL;
 real_coords = Shull.real_coord{frame};
 
