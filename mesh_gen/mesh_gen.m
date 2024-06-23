@@ -4,17 +4,17 @@ clc
 
 
 exp = '\2022_01_31\'
-path = 'H:\My Drive\dark 2022\2022_01_31\hull\hull_Reorder\'
-save_dir = 'H:\My Drive\Roni\'
+path = 'J:\My Drive\dark 2022\2022_01_31\hull\hull_Reorder\'
+save_dir = 'J:\My Drive\Roni\'
 
 save_frame = [save_dir,exp,'movies\'];
 movie = 15
-
+frame = 215
 
 mov_name = sprintf('mov%d',movie)
 file_name = sprintf('hull3d_mov%d',movie)
 struct_file_name = sprintf('Shull_mov%d',movie)
-save_file = sprintf('hull_data_mov%d.csv',movie)
+save_file = sprintf('hull_data_mov%d_frame%d.csv',movie,frame)
 path_to_use = [path,mov_name,'/hull_op/']
 load([path_to_use,file_name])
 load([path_to_use,struct_file_name])
@@ -22,7 +22,7 @@ mkdir(save_frame)
 
 %%
 
-frame = 210
+% frame = 210
 body = hull3d.body.body4plot{frame};
 wing_left = hull3d.leftwing.hull.hull3d{frame};
 wing_right = hull3d.rightwing.hull.hull3d{frame};
@@ -44,7 +44,7 @@ hull_data = [hull_data,body_left_wing_right_wing]
 
 T = array2table(hull_data)
 T.Properties.VariableNames = {'x','y','z','body','wing_l','wing_r'}
-writetable(T,[path_to_save,save_file])
+writetable(T,[save_frame,save_file])
 pcshow(wing_right);hold on;pcshow(wing_left)
 
 %%
@@ -63,7 +63,7 @@ xyz(length(real_coords{2}) + length(real_coords{1}) + 1:end,3) = 1;
 
 real_coords_table = array2table([cell2mat(real_coords')',xyz])
 real_coords_table.Properties.VariableNames = {'real_coords','x','y','z'}
-save_file = sprintf('real_coords_mov%d.csv',movie)
+save_file = sprintf('real_coords_mov%d_frame%d.csv',movie,frame)
 
 writetable(real_coords_table,[save_frame,save_file])
 
