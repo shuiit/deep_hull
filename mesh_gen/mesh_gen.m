@@ -7,7 +7,7 @@ exp = '\2022_01_31\'
 path = 'J:\My Drive\dark 2022\2022_01_31\hull\hull_Reorder\'
 save_dir = 'J:\My Drive\Roni\'
 
-save_frame = [save_dir,exp,'movies\'];
+save_frame = [save_dir,exp,'3d_data\'];
 movie = 15
 frame = 210
 
@@ -70,7 +70,8 @@ writetable(real_coords_table,[save_frame,save_file])
 
 rot_mat_table = array2table(rot_mat)
 rot_mat_table.Properties.VariableNames = {'x','y','z'}
-writetable(rot_mat_table,[save_frame,'\rot_mat.csv'])
+rotation_file = sprintf('\\rotmat_mov%d.csv',movie)
+writetable(rot_mat_table,[save_frame,rotation_file])
 pcshow(wing_right);hold on;pcshow(wing_left)
 
 
