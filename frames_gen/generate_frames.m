@@ -1,7 +1,7 @@
 
 exp = '\2022_01_31\'
-path = 'J:\My Drive\dark 2022\2022_01_31\hull\hull_Reorder\'
-save_dir = 'J:\My Drive\Roni\'
+path = 'H:\My Drive\dark 2022\2022_01_31\hull\hull_Reorder\'
+save_dir = 'G:\My Drive\'
 movie = 15
 
 
@@ -11,7 +11,7 @@ save_frame = [save_dir,exp,'2d_data\'];
 mkdir(save_frame);
 
 cams = [1,2,3,4]
-
+cam_up = 4
 files = dir(movie_path);idx = 1;
 for j = 1:1:length(files)
     if contains(files(j).name,'sparse')
@@ -30,7 +30,15 @@ for idx = 1:1:4
     for j = 1:1: length(frames)
         val_frames{j} = uint8(frames{j}(:,3)/256);
         frames{j}(:,3) = j-1;
+        frames{j}(:,1) = frames{j}(:,1) - 1;
+
+        if idx == cam_up
+        frames{j}(:,1) = 799 - frames{j}(:,1);
+        end
+
         frames{j} = frames{j}(:,1:3);
+        frames{j}(:,1:2) = fliplr(frames{j}(:,1:2));
+        
     end
     m = cell2mat(frames);
     save([save_frame,'\','location_',file_name],'m')

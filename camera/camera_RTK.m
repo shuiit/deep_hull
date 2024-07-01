@@ -1,53 +1,47 @@
 
-
+clear 
+close all
+clc
 exp = '\2022_01_31\'
 
-path = 'J:\My Drive\dark 2022\2022_01_31\hull\hull_Reorder\'
-save_dir = 'J:\My Drive\Roni\'
-save_camera_matrices = [save_dir,exp,'camera'];
+path = 'H:\My Drive\dark 2022\2022_01_31\hull\hull_Reorder\'
+save_dir = sprintf('G:/My Drive/%s/',exp)
+save_camera_matrices = [save_dir,'camera'];
 easyWand_name = '1+2_31_01_2022_skip5_easyWandData'
 load([path,easyWand_name])
-mkdir([save_dir,exp])
+mkdir([save_dir])
 mkdir(save_camera_matrices)
+camvec = [2,3,4,1]%
 
 rotation_matrices = easyWandData.rotationMatrices
 translation_vectors = easyWandData.translationVector
 
 focal_length = easyWandData.focalLengths;
 principal_point = reshape(easyWandData.principalPoints,2,4);
-coefs1 = easyWandData.coefs
-% for i = 1:1:4
-i = 4;
-    camera_name = sprintf('/camera%d_KRT',i)
-    coefs = coefs1(:,i);
-    Rzp = [-1,0,0;0,-1,0;0,0,1];
+idx = 1
+for i = camvec
+    coefs = easyWandData.coefs(:,i);
+    camera_name = sprintf('/camera%d_KRT',idx)
     H=[coefs(1),coefs(2),coefs(3);coefs(5),coefs(6),coefs(7);coefs(9),coefs(10),coefs(11)];
-    h=[-coefs(4);-coefs(8);-1];
-    % p = reshape([coefs(:,i);1],4,3)';
-    % p(:,end) = -p(:,end)
-    % H = p(1:3,1:3);
-    % h=p(1:3,4);
-    [R,K] = qr(inv(H));
-    k=inv(K);
-    T = -inv(H)*h;
-    K=Rzp*(k/k(3,3));
-    K(1:2,3) =    K(1:2,3);
-    R = Rzp*R';
+    h=[coefs(4);coefs(8);1];
 
-    p_calc = [K*R,-K*R*T];
+    Rz = [-1,0,0;0,-1,0;0,0,1]
+    X0 = -inv(H)*h;
+    [R,K] = qr(inv(H))
+    K=inv(K)
+    K = K*Rz/K(3,3)
+    R = Rz*R'
+    DLT = [K*R,-K*R*X0]
+    DLT = DLT /DLT(3,4)
+    T(idx,1:3) = X0
+    T2(idx,1:3) = (R*X0)'
 
-    reshape(p',1,12)
+    p = reshape([coefs;1],4,3)'
 
-    % K = [focal_length(i), 0, principal_point(1,i);0, focal_length(i), principal_point(2,i);0, 0, 1];
-    % R = rotation_matrices(:,:,i);
-    % T = translation_vectors(:,:,i);
-    % writematrix([K;R;T],[save_camera_matrices,camera_name])
-    
-% end
-
-% coefs = easyWandData.coefs
-[xyz,T,ypr,Uo,Vo,Z] = DLTcameraPosition(coefs)
-
+    % T might be X0 , for now R*X0
+    writematrix([K;R;(-R*X0)'],[save_camera_matrices,camera_name])
+idx = idx+ 1
+end
 
 
 
