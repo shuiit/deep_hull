@@ -32,7 +32,7 @@ class Camera():
         """
         kr = np.matmul(k,self.r_rotation)
         kt = np.matmul(k,self.t_translation.T)
-        self.cam_matrix = np.hstack((kr,-kt))
+        self.cam_matrix = np.hstack((kr,kt))
         self.cam_matrix = self.cam_matrix/self.cam_matrix[2,3]
 
     
