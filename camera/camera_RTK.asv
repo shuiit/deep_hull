@@ -30,13 +30,13 @@ idx = 1
 phi = pi
 rot = [[1,0,0];[0,cos(phi),-sin(phi)];[0,sin(phi),cos(phi)]];
     Rd = [1,0,0;0,0,1;0,1,0];
-rot_try = [ 1.0000   -0.0013   -0.0026;-0.0013   -1.0000    0.0000;   -0.0026    0.0000   -1.0000]
 
 for i = camvec
     coefs = easyWandData.coefs(:,i);
     camera_name = sprintf('/camera%d_KRT',idx)
     H=[coefs(1),coefs(2),coefs(3);coefs(5),coefs(6),coefs(7);coefs(9),coefs(10),coefs(11)];
     h=[coefs(4);coefs(8);1];
+    Rd = [1,0,0;0,-1,0;0,0,-1];
     Rz = [-1,0,0;0,-1,0;0,0,1];
     X0 = -inv(H)*h;
     [R,K] = qr(inv(H));
@@ -50,13 +50,13 @@ for i = camvec
         R=R'
     end
     
-
     ax = R(:,1)';
+        axz = R(:,3)';
+
+%     ax = R(1,:);
+
     axang = [ax pi];
     rotm = axang2rotm(axang)   ;  
-
-    R2 = R*rotm
-
 %     axang2 = [axz pi/2];
 %     rotm2 = axang2rotm(axang2)   ;  
 
@@ -73,7 +73,7 @@ for i = camvec
     p = reshape([coefs;1],4,3)';
 
     % T might be X0 , for now R*X0
-    writematrix([K;R2;(-R*X0)'],[save_camera_matrices,camera_name]);
+    writematrix([K;R;(-R*X0)'],[save_camera_matrices,camera_name]);
 idx = idx+ 1
 end
 %%
