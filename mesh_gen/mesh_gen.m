@@ -21,7 +21,7 @@ mkdir(save_frame)
 
 %%
 
-frame = 210
+% frame = 210
 body = hull3d.body.body4plot{frame};
 wing_left = hull3d.leftwing.hull.hull3d{frame};
 wing_right = hull3d.rightwing.hull.hull3d{frame};
