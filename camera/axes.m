@@ -26,9 +26,10 @@ mkdir(save_camera_matrices)
 camvec = [2,3,4,1]%
 
 mesh = pcread('G:\My Drive\2022_01_31\3d_data\mov15_frame210.ply');
-fly = mesh.Location*10;
+fly = mesh.Location;
 
 ew_to_pytorch = [1,0,0;0,0,1;0,1,0];
+% ew_to_pytorch = [1 0 0;0 1 0;0 0 1]
 fly_pytorch = (ew_to_pytorch * fly')';
 %%
 rot_try = [ 1.0000   -0.0013   -0.0026;-0.0013   -1.0000    0.0000;   -0.0026    0.0000   -1.0000]
@@ -74,29 +75,34 @@ clr2 = {'magenta','k','cyan'}
 
 %%
 
-clr = {'r','g','b'}
+clr = {'r','g','b','m'}
 clr2 = {'magenta','k','cyan'}
 figure
 axis equal
 fly2 = (Shull.rotmat_EWtoL*fly')';
-hold on;plot3(fly2(:,1),fly2(:,2),fly2(:,3),'.b')
+fly2 = fly;
+hold on;plot3(10*fly2(:,1),10*fly2(:,2),10*fly2(:,3),'.b')
 for j = 1:1:4
+        camera_name = sprintf('/camera%d_KRT',j)
+
 for k = 1:1:3
 [R,K,X0] = decompose_dlt(easyWandData.coefs(:,j))
 if j == 1
 R = R'
 end
-R = Shull.rotmat_EWtoL*R;
-X0 = Shull.rotmat_EWtoL*X0;
+% R = Shull.rotmat_EWtoL*R;
+% X0 = Shull.rotmat_EWtoL*X0;
+
 ax = R(1,:);
-axang = [ax pi];
+axang = [ax 0];
 rotm = axang2rotm(axang)   ;  
 R = rotm*R
 
 % 
 % if j == 4
-
-quiver3(X0(1),X0(2),X0(3),R(1,k),R(2,k),R(3,k),0.1,color = clr{k})
+cam_mat{j} = [K*R,-K*R*X0];
+cam_mat{j} = cam_mat{j}/cam_mat{j}(3,4)
+quiver3(X0(1),X0(2),X0(3),R(1,k),R(2,k),R(3,k),0.1,color = clr{j})
 % else
 %     quiver3(X0(1),X0(2),X0(3),R(k,1),R(k,2),R(k,3),0.1,color = clr2{k})
 % 
@@ -105,7 +111,19 @@ quiver3(X0(1),X0(2),X0(3),R(1,k),R(2,k),R(3,k),0.1,color = clr{k})
 
 end
 ylabel('y');xlabel('x')
+    writematrix([K;R;(-R*X0)'],[save_camera_matrices,camera_name]);
+
 end
+
+    writematrix(fly2,[save_camera_matrices,'fly']);
+%%
+
+pts = [fly2,ones(size(fly,1),1)]
+
+pt2d = cam_mat{4}*pts'
+pt2d = (pt2d./pt2d(3,:))'
+figure
+scatter(pt2d(:,1),pt2d(:,2))
 
 
 
