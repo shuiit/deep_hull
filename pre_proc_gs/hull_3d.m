@@ -4,7 +4,7 @@ close all
 clc
 
 exp = '2022_03_03'
-path = 'H:\My Drive\dark 2022\2022_03_03\hull\hull_Reorder\'
+path = 'J:\My Drive\dark 2022\2022_03_03\hull\hull_Reorder\'
 easyWand_name = '3+4_post_03_03_2022_skip5_easyWandData.mat'
 movie = 19
 mov_name = sprintf('mov%d',movie)
@@ -14,15 +14,15 @@ load([path,mov_name,'\hull_op\',struct_file_name])
 hull3d_file_name = sprintf('\\hull3d_mov%d',movie)
 load([path,mov_name,'\hull_op\',hull3d_file_name])
 
-save_dir = sprintf('G:/My Drive/%s/',exp)
-save_camera_matrices = [save_dir,'camera'];
-save_3d_hull = [save_dir,'3d_data/'];
-save_2d_data = [save_dir,'2d_data/'];
+% save_dir = sprintf('G:/My Drive/%s/',exp)
+% save_camera_matrices = [save_dir,'camera'];
+% save_3d_hull = [save_dir,'3d_data/'];
+% save_2d_data = [save_dir,'2d_data/'];
 
-mkdir([save_dir])
-mkdir(save_camera_matrices)
-mkdir(save_3d_hull)
-mkdir(save_2d_data)
+% mkdir([save_dir])
+% mkdir(save_camera_matrices)
+% mkdir(save_3d_hull)
+% mkdir(save_2d_data)
 
 % load sparse
 
@@ -47,7 +47,176 @@ wing_left_3d = [real_coords{1}(wing_left(:,1))',real_coords{2}(wing_left(:,2))',
 wing_right_3d = [real_coords{1}(wing_right(:,1))',real_coords{2}(wing_right(:,2))',real_coords{3}(wing_right(:,3))']
 
 fly = [body_3d;wing_left_3d;wing_right_3d];
-writematrix(fly,[save_3d_hull,'fly']);
+% writematrix(fly,[save_3d_hull,'fly']);
+%%
+
+
+load([path,easyWand_name])
+figure
+clr = {'r','g','b','m'}
+
+for j = 1:1:4
+[R,K,X0] = decompose_dlt(easyWandData.coefs(:,j));
+Rplt = R';
+t_plt = X0;
+pm1{j} = [K*R,-K*R*X0]
+pm{j} = pm{j}/pm{j}(3,4);
+
+for k = 1:1:3
+quiver3(t_plt(1),t_plt(2),t_plt(3),Rplt(1,k),Rplt(2,k),Rplt(3,k),0.1,color = clr{k});hold on
+scatter3(t_plt(1),t_plt(2),t_plt(3),30,'filled', clr{j});hold on
+
+hold on; axis equal
+end
+end
+
+%%
+
+for j = 1:1:4
+[xyz,T,ypr,Uo,Vo,Z] = DLTcameraPosition(easyWandData.coefs(:,j))
+
+Rplt = T(1:3,1:3);
+t_plt = -xyz;
+
+pm{j} = [K*Rplt',K*Rplt'*X0]
+
+
+for k = 1:1:3
+quiver3(t_plt(1),t_plt(2),t_plt(3),Rplt(1,k),Rplt(2,k),Rplt(3,k),0.1,color = clr{k},LineWidth=3);hold on
+scatter3(t_plt(1),t_plt(2),t_plt(3),30,'filled', clr{j});hold on
+
+hold on; axis equal
+end
+end
+%%
+%%
+flytmp = fly;
+% flytmp(:,2) = -flytmp(:,2);
+
+cam = 3
+fly_h = [flytmp,ones(size(fly,1),1)];
+pt2d = pm{cam}*fly_h';
+pt2d =( pt2d./pt2d(3,:))'
+
+
+im = ImfromSp([800,1280],sp{cam}.frames(frame_sparse).indIm);
+figure
+[uv] = dlt_inverse(easyWandData.coefs(:,cam),fly);
+imshow(im);hold on
+
+scatter(uv(:,1),801-uv(:,2));hold on
+
+% scatter(uv(:,1),uv(:,2));hold on
+
+scatter(pt2d(:,1),801-pt2d(:,2),'r.')
+
+
+
+
+%%
+for j = 1:1:4
+[R,K,X0] = decompose_dlt(easyWandData.coefs(:,j));
+% t = X0;
+% R = R';
+pm{j} = [K*R,-K*R*X0]
+
+R_colmap = R';
+t_colmap = -R*X0;
+% -R*t'
+Rplt = R_colmap;
+t_plt = -R_colmap*t_colmap;
+% [xyz,T,ypr,Uo,Vo,Z] = DLTcameraPosition(easyWandData.coefs(:,j))
+% t_plt = xyz;
+% Rplt = T(1:3,1:3);
+% Ralign = [-1,0,0;0,1,0;0,0,-1];
+
+% Rplt = Rplt*Ralign;
+
+% pm{j} = [K*Rplt',-K*Rplt'*t_plt]
+
+for k = 1:1:3
+quiver3(t_plt(1),t_plt(2),t_plt(3),Rplt(1,k),Rplt(2,k),Rplt(3,k),0.1,color = clr{k});hold on
+scatter3(t_plt(1),t_plt(2),t_plt(3),30,'filled', clr{j});hold on
+
+hold on
+end
+end
+axis equal
+scatter3(0,0,0,100,'filled')
+
+hold on;scatter3(fly(:,1),fly(:,2),fly(:,3),'.');axis equal
+
+%%
+for j = 1:1:4
+[R,K,X0] = decompose_dlt(easyWandData.coefs(:,j));
+% t = X0;
+% X0 = -X0;
+
+R_colmap = R';
+t_colmap = -R*X0;
+% -R*t'
+Rplt = R_colmap;
+t_plt = -R_colmap*t_colmap;
+[xyz,T,ypr,Uo,Vo,Z] = DLTcameraPosition(easyWandData.coefs(:,j))
+X0 = xyz;
+R= T(1:3,1:3);
+% if j == 4
+   
+
+% t_plt = xyz;
+% Rplt = T(1:3,1:3);
+Ralign = [1,0,0;0,1,0;0,0,-1];
+flytmp = -(Ralign*fly')';
+% 
+R = R*Ralign;
+% end
+pm{j} = [K*R',-K*R'*X0]
+
+Rplt = R;
+tplt = X0;
+
+
+
+% 
+% Xcam = Rplt'*fly - X0;
+
+% pm{j} = [K*Rplt',-K*Rplt'*t_plt]
+
+for k = 1:1:3
+quiver3(t_plt(1),t_plt(2),t_plt(3),Rplt(1,k),Rplt(2,k),Rplt(3,k),0.1,color = clr{k});hold on
+scatter3(t_plt(1),t_plt(2),t_plt(3),30,'filled', clr{j});hold on
+
+hold on
+end
+end
+axis equal
+scatter3(0,0,0,100,'filled')
+
+hold on;scatter3(fly(:,1),fly(:,2),fly(:,3),'.');axis equal
+%%
+cam = 2
+% flytmp = fly;
+% flytmp(:,1) = -flytmp(:,1)
+fly_h = [flytmp,ones(size(fly,1),1)];
+pt2d = pm{cam}*fly_h';
+pt2d =( pt2d./pt2d(3,:))'
+
+
+im = ImfromSp([800,1280],sp{cam}.frames(frame_sparse).indIm);
+figure
+[uv] = dlt_inverse(easyWandData.coefs(:,cam),fly);
+imshow(im);hold on
+
+scatter(uv(:,1),801-uv(:,2));hold on
+
+% scatter(uv(:,1),uv(:,2));hold on
+
+scatter(pt2d(:,1),801-pt2d(:,2),'r.')
+
+
+
+
+
 %% lab axes
 load([path,easyWand_name])
 figure
@@ -79,43 +248,6 @@ hold on;scatter3(0,0,0,1000,'.r');axis equal
 legend([quiverHandles,scatterHandles], {'x', 'y', 'z','cam1','cam2','cam3','cam4'});
 xlabel('x');ylabel('y');zlabel('z')
 title('Lab')
-%%
-figure
-for j = 1:1:4
-[R,K,X0] = decompose_dlt(easyWandData.coefs(:,j));
-if j == 1
-R = R';
-end
-
-% Define the camera axes in world coordinates (columns of R are the axes)
-X_cam = R(:,1);  % X-axis of the camera in world coordinates
-Y_cam = R(:,2);  % Y-axis of the camera in world coordinates
-Z_cam = R(:,3);  % Z-axis of the camera in world coordinates
-
-% Define the scale for visualizing the axes
-scale = 0.1;
-
-% Plot the camera position (X0) in world coordinates
-;
-hold on;
-grid on;
-axis equal;
-plot3(X0(1), X0(2), X0(3), 'ko', 'MarkerSize', 10, 'MarkerFaceColor', 'k'); % Camera center
-
-% Plot the camera's X, Y, Z axes using quiver3
-quiver3(X0(1), X0(2), X0(3), scale*X_cam(1), scale*X_cam(2), scale*X_cam(3), 'r', 'LineWidth', 2); % X-axis (red)
-quiver3(X0(1), X0(2), X0(3), scale*Y_cam(1), scale*Y_cam(2), scale*Y_cam(3), 'g', 'LineWidth', 2); % Y-axis (green)
-quiver3(X0(1), X0(2), X0(3), scale*Z_cam(1), scale*Z_cam(2), scale*Z_cam(3), 'b', 'LineWidth', 2); % Z-axis (blue)
-
-% Label the axes
-xlabel('X');
-ylabel('Y');
-zlabel('Z');
-title('Camera in World Coordinates');
-
-hold off;
-end
-
 %% easywand axes
 load([path,easyWand_name])
 figure
@@ -157,24 +289,37 @@ title('Easywand')
 
 %%
 
-
 figure
 for j = 1:1:4
 [R,K,X0] = decompose_dlt(easyWandData.coefs(:,j));
-if j == 1
-    R = R'
-end
+% t = X0;
+% R = R';
+pm{j} = [K*R,-K*R*X0]
 
-R = R*Ralign;
-t = +X0;
+R_colmap = R';
+t_colmap = -R*X0;
+% -R*t'
+Rplt = R_colmap;
+t_plt = -R_colmap*t_colmap;
+[xyz,T,ypr,Uo,Vo,Z] = DLTcameraPosition(easyWandData.coefs(:,j))
+t_plt = xyz;
+Rplt = T(1:3,1:3);
+Ralign = [-1,0,0;0,1,0;0,0,-1];
+
+Rplt = Rplt;
+
 subplot(2,2,j)
 
-fly_cam = (R'*fly' + R'*X0)';
+fly_cam = (Rplt'*fly' + Rplt'*t_plt)';
 hold on;scatter3(fly_cam(:,1),fly_cam(:,2),fly_cam(:,3),'.');axis equal; xlabel('x');ylabel('y');zlabel('z')
 ttl = sprintf('cam%d',j)
 title(ttl)
-R_world = R';
-t_world = + R'*X0; % check with I
+R_world = Rplt';
+t_world = + Rplt'*t_plt; % check with I
+
+
+pm{j} = [K*Rplt',-K*Rplt'*t_plt]
+
 for k = 1:1:3
 quiver3(t_world(1),t_world(2),t_world(3),R_world(1,k),R_world(2,k),R_world(3,k),0.01,color = clr{k});hold on
 scatter3(t_world(1),t_world(2),t_world(3),30,'filled', clr{j});hold on
@@ -184,16 +329,18 @@ end
 
 
 %%
-cam = 1
+flytmp = fly;
+% flytmp(:,2) = -flytmp(:,2);
 
-fly_h = [fly,ones(size(fly,1),1)]
+cam = 2
+fly_h = [flytmp,ones(size(fly,1),1)];
 pt2d = pm{cam}*fly_h';
 pt2d =( pt2d./pt2d(3,:))'
 
 
 im = ImfromSp([800,1280],sp{cam}.frames(frame_sparse).indIm);
 figure
-[uv] = dlt_inverse(easyWandData.coefs(:,cam),fly)
+[uv] = dlt_inverse(easyWandData.coefs(:,cam),fly);
 imshow(im);hold on
 
 scatter(uv(:,1),801-uv(:,2));hold on
