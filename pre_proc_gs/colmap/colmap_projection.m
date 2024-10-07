@@ -28,7 +28,7 @@ xyz = [pt3d_tbl.X,pt3d_tbl.Y,pt3d_tbl.Z];
 R1 = qvec2rotmat(table2array(image_row(1,2:5))); % rotation matrix, world to camera, each column is an axes of the camera in world coordinates
 t1 = table2array(image_row(1,6:8)); % translation vector, the origin of the world FoR in camera axes
 
-
+clr = {'r','g','b','m'}
 plot3(pt3d_tbl.X,pt3d_tbl.Y,pt3d_tbl.Z,'.');xlabel('x');ylabel('y');zlabel('z');axis equal;hold on % plot the 3d points in world coordinates.
 R = R1'; % transpose the rotation matrix. R is cam to world
 t = -R*t1'; % rotate the translation vector from cam to world
