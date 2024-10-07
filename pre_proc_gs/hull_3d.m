@@ -1,11 +1,16 @@
 %% load hull
-clear 
+clear
 close all
 clc
 
 exp = '2022_03_03'
-path = 'J:\My Drive\dark 2022\2022_03_03\hull\hull_Reorder\'
+path = 'H:\My Drive\dark 2022\2022_03_03\hull\hull_Reorder\'
 easyWand_name = '3+4_post_03_03_2022_skip5_easyWandData.mat'
+
+
+% path = 'H:\My Drive\dark 2022\2022_05_19\hull\hull_Reorder\'
+% easyWand_name = 'wand_data1_19_05_2022_skip5_easyWandData'
+
 movie = 19
 mov_name = sprintf('mov%d',movie)
 struct_file_name = sprintf('\\Shull_mov%d',movie)
@@ -27,12 +32,11 @@ load([path,mov_name,'\hull_op\',hull3d_file_name])
 % load sparse
 
 for cam = 1:1:4
-sparse_file = sprintf('\\mov%d_cam%d_sparse.mat',movie,cam)
-sp{cam} = load([path,mov_name,sparse_file])
+    sparse_file = sprintf('\\mov%d_cam%d_sparse.mat',movie,cam)
+    sp{cam} = load([path,mov_name,sparse_file])
 end
+
 %%
-
-
 
 frame_sparse = 500;
 frame = find(Shull.frames == frame_sparse);
@@ -45,309 +49,99 @@ real_coords = Shull.real_coord{frame}
 body_3d = [real_coords{1}(body(:,1))',real_coords{2}(body(:,2))',real_coords{3}(body(:,3))']
 wing_left_3d = [real_coords{1}(wing_left(:,1))',real_coords{2}(wing_left(:,2))',real_coords{3}(wing_left(:,3))']
 wing_right_3d = [real_coords{1}(wing_right(:,1))',real_coords{2}(wing_right(:,2))',real_coords{3}(wing_right(:,3))']
-
+ew2lab = Shull.rotmat_EWtoL;
 fly = [body_3d;wing_left_3d;wing_right_3d];
 % writematrix(fly,[save_3d_hull,'fly']);
-%%
-
-
+%% world axes - from easywand
+figure;
 load([path,easyWand_name])
-figure
-clr = {'r','g','b','m'}
 
-for j = 1:1:4
-[R,K,X0] = decompose_dlt(easyWandData.coefs(:,j));
-Rplt = R';
-t_plt = X0;
-pm1{j} = [K*R,-K*R*X0]
-pm{j} = pm{j}/pm{j}(3,4);
 
-for k = 1:1:3
-quiver3(t_plt(1),t_plt(2),t_plt(3),Rplt(1,k),Rplt(2,k),Rplt(3,k),0.1,color = clr{k});hold on
-scatter3(t_plt(1),t_plt(2),t_plt(3),30,'filled', clr{j});hold on
+subplot(1,2,1)
+plot_camera(easyWandData.rotationMatrices,easyWandData.DLTtranslationVector,[1,0,0;0,1,0;0,0,1],'Easy wand')
+subplot(1,2,2)
 
-hold on; axis equal
+plot_camera(easyWandData.rotationMatrices,easyWandData.DLTtranslationVector,ew2lab,'Lab')
+%% world axes - from coefs
+figure;
+load([path,easyWand_name])
+
+for j= 1:1:4
+
+[R,K,X0,H] = decompose_dlt(easyWandData.coefs(:,j),easyWandData.rotationMatrices(:,:,j)');
+rotation(:,:,j) = R; 
+translation(:,:,j) = X0; 
+k_all(:,:,j) = K;
+
+camera(:,:,j) = [K,R,X0]
+
+pmdlt{j} = [K*R,-K*R*X0];
 end
+plot_camera(rotation,translation,[1,0,0;0,1,0;0,0,1],'standard wand')
+
+
+
+%% project from 3d to 2d
+figure;
+d = 10
+for cam = 1:1:4
+fly_h = [fly,ones(size(fly,1),1)];
+pt2d = pmdlt{cam}*fly_h';
+pt2d =( pt2d./pt2d(3,:))';
+
+image_data = sp{cam}.frames(frame_sparse).indIm;
+if cam == 1
+    image_data(:,1) = 801 - image_data(:,1);
 end
-
-%%
-
-for j = 1:1:4
-[xyz,T,ypr,Uo,Vo,Z] = DLTcameraPosition(easyWandData.coefs(:,j))
-
-Rplt = T(1:3,1:3);
-t_plt = -xyz;
-
-pm{j} = [K*Rplt',K*Rplt'*X0]
-
-
-for k = 1:1:3
-quiver3(t_plt(1),t_plt(2),t_plt(3),Rplt(1,k),Rplt(2,k),Rplt(3,k),0.1,color = clr{k},LineWidth=3);hold on
-scatter3(t_plt(1),t_plt(2),t_plt(3),30,'filled', clr{j});hold on
-
-hold on; axis equal
-end
-end
-%%
-%%
-flytmp = fly;
-% flytmp(:,2) = -flytmp(:,2);
-
-cam = 3
-fly_h = [flytmp,ones(size(fly,1),1)];
-pt2d = pm{cam}*fly_h';
-pt2d =( pt2d./pt2d(3,:))'
-
-
+crop = double([min(image_data(:,2)) - d, min(image_data(:,1)) - d,max(image_data(:,2)) + d,max(image_data(:,1)) + d]);
 im = ImfromSp([800,1280],sp{cam}.frames(frame_sparse).indIm);
-figure
+
+subplot(2,2,cam)
 [uv] = dlt_inverse(easyWandData.coefs(:,cam),fly);
-imshow(im);hold on
-
-scatter(uv(:,1),801-uv(:,2));hold on
-
-% scatter(uv(:,1),uv(:,2));hold on
-
-scatter(pt2d(:,1),801-pt2d(:,2),'r.')
-
-
-
-
-%%
-for j = 1:1:4
-[R,K,X0] = decompose_dlt(easyWandData.coefs(:,j));
-% t = X0;
-% R = R';
-pm{j} = [K*R,-K*R*X0]
-
-R_colmap = R';
-t_colmap = -R*X0;
-% -R*t'
-Rplt = R_colmap;
-t_plt = -R_colmap*t_colmap;
-% [xyz,T,ypr,Uo,Vo,Z] = DLTcameraPosition(easyWandData.coefs(:,j))
-% t_plt = xyz;
-% Rplt = T(1:3,1:3);
-% Ralign = [-1,0,0;0,1,0;0,0,-1];
-
-% Rplt = Rplt*Ralign;
-
-% pm{j} = [K*Rplt',-K*Rplt'*t_plt]
-
-for k = 1:1:3
-quiver3(t_plt(1),t_plt(2),t_plt(3),Rplt(1,k),Rplt(2,k),Rplt(3,k),0.1,color = clr{k});hold on
-scatter3(t_plt(1),t_plt(2),t_plt(3),30,'filled', clr{j});hold on
-
-hold on
+imshow(im(crop(2):crop(4),crop(1):crop(3)));hold on
+scatter(uv(:,1) - crop(1)+1,801-uv(:,2) - crop(2)+1);hold on
+scatter(pt2d(:,1) - crop(1)+1,801-pt2d(:,2) - crop(2)+1,'r.')
 end
-end
-axis equal
-scatter3(0,0,0,100,'filled')
 
-hold on;scatter3(fly(:,1),fly(:,2),fly(:,3),'.');axis equal
+legend('ew','standard')
 
-%%
-for j = 1:1:4
-[R,K,X0] = decompose_dlt(easyWandData.coefs(:,j));
-% t = X0;
-% X0 = -X0;
-
-R_colmap = R';
-t_colmap = -R*X0;
-% -R*t'
-Rplt = R_colmap;
-t_plt = -R_colmap*t_colmap;
-[xyz,T,ypr,Uo,Vo,Z] = DLTcameraPosition(easyWandData.coefs(:,j))
-X0 = xyz;
-R= T(1:3,1:3);
-% if j == 4
-   
-
-% t_plt = xyz;
-% Rplt = T(1:3,1:3);
-Ralign = [1,0,0;0,1,0;0,0,-1];
-flytmp = -(Ralign*fly')';
-% 
-R = R*Ralign;
-% end
-pm{j} = [K*R',-K*R'*X0]
-
-Rplt = R;
-tplt = X0;
-
-
-
-% 
-% Xcam = Rplt'*fly - X0;
-
-% pm{j} = [K*Rplt',-K*Rplt'*t_plt]
-
-for k = 1:1:3
-quiver3(t_plt(1),t_plt(2),t_plt(3),Rplt(1,k),Rplt(2,k),Rplt(3,k),0.1,color = clr{k});hold on
-scatter3(t_plt(1),t_plt(2),t_plt(3),30,'filled', clr{j});hold on
-
-hold on
-end
-end
-axis equal
-scatter3(0,0,0,100,'filled')
-
-hold on;scatter3(fly(:,1),fly(:,2),fly(:,3),'.');axis equal
-%%
-cam = 2
-% flytmp = fly;
-% flytmp(:,1) = -flytmp(:,1)
-fly_h = [flytmp,ones(size(fly,1),1)];
-pt2d = pm{cam}*fly_h';
-pt2d =( pt2d./pt2d(3,:))'
-
-
-im = ImfromSp([800,1280],sp{cam}.frames(frame_sparse).indIm);
-figure
-[uv] = dlt_inverse(easyWandData.coefs(:,cam),fly);
-imshow(im);hold on
-
-scatter(uv(:,1),801-uv(:,2));hold on
-
-% scatter(uv(:,1),uv(:,2));hold on
-
-scatter(pt2d(:,1),801-pt2d(:,2),'r.')
-
-
-
-
-
-%% lab axes
+%% world axes - from coefs
+figure;
 load([path,easyWand_name])
-figure
-clr = {'r','g','b','m'}
-
+clr = {'r','g','b'}
 for j = 1:1:4
-[R,K,X0] = decompose_dlt(easyWandData.coefs(:,j));
-length_arr = 0.2
-if j == 1
-    R = R'
-    length_arr = 0.3;
-end
-
-R = -Shull.rotmat_EWtoL*R;
-t = Shull.rotmat_EWtoL*X0;
-for k = 1:1:3
-    if k == 3
-        quiverHandles(k) = quiver3(t(1),t(2),t(3),R(1,k),R(2,k),R(3,k),length_arr,color = clr{k});hold on
-    else
-        quiverHandles(k) = quiver3(t(1),t(2),t(3),R(1,k),R(2,k),R(3,k),0.1,color = clr{k});hold on
-    end
-end
-scatterHandles(j) = scatter3(t(1),t(2),t(3),30,'filled', clr{j});hold on
-
-end
-fly_lab = (Shull.rotmat_EWtoL*fly')';
-hold on;scatter3(fly_lab(:,1),fly_lab(:,2),fly_lab(:,3),'.');axis equal
-hold on;scatter3(0,0,0,1000,'.r');axis equal
-legend([quiverHandles,scatterHandles], {'x', 'y', 'z','cam1','cam2','cam3','cam4'});
-xlabel('x');ylabel('y');zlabel('z')
-title('Lab')
-%% easywand axes
-load([path,easyWand_name])
-figure
-Ralign = [1 0 0 ;0 1 0 ;0 0 1]
-clr = {'r','g','b','m'}
-
-for j = 1:1:4
-[R1,K,X0] = decompose_dlt(easyWandData.coefs(:,j));
-if j == 1
-
-    R1 = R1
-    X0 = -X0;
-end
-
-
-R = R1'*Ralign;
-t = X0;
-rot = easyWandData.rotationMatrices(:,:,j)';
-trans = rot*easyWandData.translationVector(:,:,j)';
-pm{j} = [K*R1,-K*R1*X0]; % R - world to camera, X0 - location in world. R - rotate to camera 
-
-r_colmap = R1'
-t_colmap = X0;
-
-
-
-% pm{j} = pm{j}/pm{j}(3,4)
-for k = 1:1:3
-quiver3(t_colmap(1),t_colmap(2),t_colmap(3),r_colmap(1,k),r_colmap(2,k),r_colmap(3,k),0.1,color = clr{k});hold on
-% quiver3(trans(1),trans(2),trans(3),rot(1,k),rot(2,k),rot(3,k),0.1,color = clr{k});hold on
-scatter3(t_colmap(1),t_colmap(2),t_colmap(3),30,'filled', clr{j});hold on
-end
-end
-scatter3(0,0,0,100,'filled', clr{j});hold on
-
-hold on;scatter3(10*fly(:,1),10*fly(:,2),10*fly(:,3),'.');axis equal
-xlabel('x');ylabel('y');zlabel('z')
-title('Easywand')
-
-%%
-
-figure
-for j = 1:1:4
-[R,K,X0] = decompose_dlt(easyWandData.coefs(:,j));
-% t = X0;
-% R = R';
-pm{j} = [K*R,-K*R*X0]
-
-R_colmap = R';
-t_colmap = -R*X0;
-% -R*t'
-Rplt = R_colmap;
-t_plt = -R_colmap*t_colmap;
-[xyz,T,ypr,Uo,Vo,Z] = DLTcameraPosition(easyWandData.coefs(:,j))
-t_plt = xyz;
-Rplt = T(1:3,1:3);
-Ralign = [-1,0,0;0,1,0;0,0,-1];
-
-Rplt = Rplt;
-
 subplot(2,2,j)
-
-fly_cam = (Rplt'*fly' + Rplt'*t_plt)';
-hold on;scatter3(fly_cam(:,1),fly_cam(:,2),fly_cam(:,3),'.');axis equal; xlabel('x');ylabel('y');zlabel('z')
-ttl = sprintf('cam%d',j)
-title(ttl)
-R_world = Rplt';
-t_world = + Rplt'*t_plt; % check with I
-
-
-pm{j} = [K*Rplt',-K*Rplt'*t_plt]
-
+[R,K,X0,H] = decompose_dlt(easyWandData.coefs(:,j),easyWandData.rotationMatrices(:,:,j)');
+t = R*X0;
+fly_cam = (R*fly' + t)';
+scatter3(fly_cam(:,1),fly_cam(:,2),fly_cam(:,3),'.');hold on
 for k = 1:1:3
-quiver3(t_world(1),t_world(2),t_world(3),R_world(1,k),R_world(2,k),R_world(3,k),0.01,color = clr{k});hold on
-scatter3(t_world(1),t_world(2),t_world(3),30,'filled', clr{j});hold on
+quiver3(t(1),t(2),t(3),R(1,k),R(2,k),R(3,k),0.005,clr{k});axis equal
 end
+view(0,90)
+ttl = sprintf('cam%d',j)
+xlabel('x');ylabel('y');zlabel('z')
+title(ttl)
 end
-
-
-
 %%
-flytmp = fly;
-% flytmp(:,2) = -flytmp(:,2);
+j = 2
+[R,K,X0,H] = decompose_dlt(easyWandData.coefs(:,j),easyWandData.rotationMatrices(:,:,j)');
 
+znear = 1
+zfar = 100
+fovX = K(1,1)
+fovY =K(2,2)
+
+P = getProjectionMatrix(znear, zfar, fovX, fovY)
+
+proj_mat = [R,R*X0]*P
+
+pt2d = (proj_mat*fly_h')
+pt2d = pmdlt{cam}*fly_h';
+pt2d =( pt2d./pt2d(3,:))';
+
+figure;
 cam = 2
-fly_h = [flytmp,ones(size(fly,1),1)];
-pt2d = pm{cam}*fly_h';
-pt2d =( pt2d./pt2d(3,:))'
-
-
 im = ImfromSp([800,1280],sp{cam}.frames(frame_sparse).indIm);
-figure
-[uv] = dlt_inverse(easyWandData.coefs(:,cam),fly);
 imshow(im);hold on
-
-scatter(uv(:,1),801-uv(:,2));hold on
-
-% scatter(uv(:,1),uv(:,2));hold on
-
-scatter(pt2d(:,1),801-pt2d(:,2),'r.')
-
-
-
+scatter(pt2d(:,1),801-pt2d(:,2))
